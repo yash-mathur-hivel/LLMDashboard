@@ -1,6 +1,0 @@
-#root {
-  /* Let layout components and Tailwind control sizing and alignment */
-  min-height: 100vh;
-}
-
-/* Intentionally left minimal; layout and components are styled via Tailwind and component-level CSS */
