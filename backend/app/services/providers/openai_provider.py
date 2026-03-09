@@ -86,27 +86,46 @@ class OpenAIProvider(BaseProvider):
             ]
 
         return payload
+    def parse_response(self, data: dict) -> NormalizedResponse:
+        choices = data.get("choices") or []
+        if choices and isinstance(choices, list):
+            choice = choices[0] or {}
+        else:
+            choice = {}
 
-        def parse_response(self, data: dict) -> NormalizedResponse:
-        choice = data.get("choices", [{}])[0]
-        message = choice.get("message", {})
-        usage = data.get("usage", {})
+        message = choice.get("message") or {}
+        if not isinstance(message, dict):
+            message = {}
+
+        usage = data.get("usage") or {}
+        if not isinstance(usage, dict):
+            usage = {}
 
         content = message.get("content")
         finish_reason = choice.get("finish_reason", "stop")
 
         tool_calls = []
         for tc in message.get("tool_calls") or []:
-            args = tc["function"].get("arguments", "{}")
+            import json
+            if not isinstance(tc, dict):
+                continue
+            func = tc.get("function") or {}
+            if not isinstance(func, dict):
+                func = {}
+            args = func.get("arguments", "{}")
             if isinstance(args, str):
                 try:
                     args = json.loads(args)
                 except Exception:
                     args = {}
+            elif not isinstance(args, dict):
+                args = {}
+
+            name = func.get("name") or ""
             tool_calls.append(
                 ToolCall(
                     id=tc.get("id", ""),
-                    name=tc["function"]["name"],
+                    name=name,
                     input=args,
                 )
             )

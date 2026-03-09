@@ -15,6 +15,11 @@ class AnthropicProvider(BaseProvider):
     def build_request_payload(self, req: NormalizedRequest) -> dict:
         # Convert normalized (likely OpenAI-style) messages into Anthropic's expected format
         anthropic_messages = []
+    def build_request_payload(self, req: NormalizedRequest) -> dict:
+        # Convert normalized (likely OpenAI-style) messages into Anthropic's expected format
+        anthropic_messages = []
+        system_messages = []
+
         for msg in req.messages:
             role = msg.get("role")
             content = msg.get("content")
@@ -24,18 +29,59 @@ class AnthropicProvider(BaseProvider):
             elif isinstance(content, list):
                 # Assume already in Anthropic-like block format if it's a list
                 content_blocks = content
-            elif content is None:
-                content_blocks = []
             else:
-                # Fallback: coerce unexpected content types to text to avoid silent data loss
-                content_blocks = [{"type": "text", "text": str(content)}]
+                content_blocks = []
+
+            # Map OpenAI-style roles to Anthropic roles / fields
+            if role == "system":
+                # Collect system messages to merge into the system field later
+                system_messages.append("".join(
+                    block.get("text", "") for block in content_blocks if block.get("type") == "text"
+                ))
+                continue
+            elif role == "assistant":
+                anthropic_role = "assistant"
+            else:
+                # Treat any non-system role as user (e.g., "user", "tool", etc.)
+                anthropic_role = "user"
 
             anthropic_messages.append(
                 {
-                    "role": role,
+                    "role": anthropic_role,
                     "content": content_blocks,
                 }
             )
+
+        payload: dict = {
+            "model": req.model,
+            "messages": anthropic_messages,
+            "max_tokens": req.max_tokens or 4096,
+        }
+        # Prefer explicit system field, but also merge any system-role messages
+        system_text_parts = []
+        if req.system:
+            system_text_parts.append(req.system)
+        if system_messages:
+            system_text_parts.append("\n".join(system_messages))
+        if system_text_parts:
+            payload["system"] = "\n".join(system_text_parts)
+        if req.temperature is not None:
+            payload["temperature"] = req.temperature
+        if req.tools:
+            # Convert normalized/OpenAI-style tools into Anthropic's tools format
+            anthropic_tools = []
+            for tool in req.tools:
+                # Expecting shape similar to {"name": ..., "description": ..., "parameters": {...}}
+                anthropic_tools.append(
+                    {
+                        "name": tool.get("name"),
+                        "description": tool.get("description"),
+                        "input_schema": tool.get("parameters") or tool.get("input_schema") or {},
+                    }
+                )
+            payload["tools"] = anthropic_tools
+
+        return payload
 
         payload: dict = {
             "model": req.model,
