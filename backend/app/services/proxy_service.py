@@ -105,16 +105,13 @@ async def execute_proxy(
                 error_message = str(response_data)
             else:
                 norm_resp = provider.parse_response(response_data)
-    except httpx.HTTPError as exc:
-         status = "error"
-         error_message = str(exc)
-         # Use a sentinel status code to indicate a transport-level error
-         http_status_code = http_status_code or 0
-     except Exception:
-         # Re-raise unexpected exceptions so they are visible to callers/monitoring
-         raise
+            except httpx.HTTPError as exc:
+            status = "error"
+            error_message = str(exc)
+            # Use a sentinel status code to indicate a transport-level error
+            http_status_code = http_status_code or 0
 
-    latency_ms = int((time.monotonic() - start_time) * 1000)
+            latency_ms = int((time.monotonic() - start_time) * 1000)
 
     prompt_tokens = norm_resp.prompt_tokens if norm_resp is not None else None
     completion_tokens = norm_resp.completion_tokens if norm_resp is not None else None
@@ -148,11 +145,20 @@ async def execute_proxy(
         error_message=error_message,
         http_status_code=http_status_code,
         mcp_config_id=mcp_config_id,
-        raw_response_meta=norm_resp.raw_meta if norm_resp else response_data,
+        raw_response_meta=(
+            norm_resp.raw_meta
+            if norm_resp
+            else {
+                "response_data": response_data,
+                "error_message": error_message,
+                "provider": provider_name,
+                "url": url,
+            }
+        ),
         )
 
-    db.add(log)
-    try:
+        db.add(log)
+        try:
         await db.commit()
     except Exception:
         await db.rollback()

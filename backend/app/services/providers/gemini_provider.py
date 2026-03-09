@@ -55,14 +55,14 @@ class GeminiProvider(BaseProvider):
             payload["generationConfig"] = generation_config
 
         if req.tools:
-            # Convert Anthropic-style tools to Gemini function declarations
+            # Convert tools to Gemini function declarations, supporting both Anthropic-style and OpenAI-style schemas
             payload["tools"] = [
                 {
                     "function_declarations": [
                         {
                             "name": t["name"],
                             "description": t.get("description", ""),
-                            "parameters": t.get("input_schema", {}),
+                            "parameters": t.get("input_schema") or t.get("parameters") or {},
                         }
                         for t in req.tools
                     ]
