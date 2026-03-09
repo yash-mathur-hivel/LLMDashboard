@@ -52,7 +52,7 @@ FRONTEND_PID=$!
 echo "  Frontend PID: $FRONTEND_PID"
 
 # ── Cleanup on exit ───────────────────────────────────────────────────────────
-trap "echo ''; echo '→ Shutting down...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; wait $BACKEND_PID $FRONTEND_PID 2>/dev/null" SIGINT SIGTERM
+trap "echo ''; echo '→ Shutting down...'; kill -- -$BACKEND_PID -$FRONTEND_PID 2>/dev/null; wait $BACKEND_PID $FRONTEND_PID 2>/dev/null" SIGINT SIGTERM
 
 echo ""
 echo "  Backend:  http://localhost:8000"

@@ -3,28 +3,28 @@
 # (input_per_1M_usd, output_per_1M_usd)
 PRICING: dict[str, tuple[float, float]] = {
     # OpenAI
-    "gpt-4o": (2.50, 10.00),
-    "gpt-4o-mini": (0.15, 0.60),
-    "gpt-4-turbo": (10.00, 30.00),
-    "gpt-4": (30.00, 60.00),
-    "gpt-3.5-turbo": (0.50, 1.50),
-    "o1": (15.00, 60.00),
-    "o1-mini": (3.00, 12.00),
-    "o3-mini": (1.10, 4.40),
+    "gpt-4o".lower(): (2.50, 10.00),
+    "gpt-4o-mini".lower(): (0.15, 0.60),
+    "gpt-4-turbo".lower(): (10.00, 30.00),
+    "gpt-4".lower(): (30.00, 60.00),
+    "gpt-3.5-turbo".lower(): (0.50, 1.50),
+    "o1".lower(): (15.00, 60.00),
+    "o1-mini".lower(): (3.00, 12.00),
+    "o3-mini".lower(): (1.10, 4.40),
     # Anthropic
-    "claude-3-5-sonnet": (3.00, 15.00),
-    "claude-3-5-haiku": (0.80, 4.00),
-    "claude-3-opus": (15.00, 75.00),
-    "claude-3-haiku": (0.25, 1.25),
-    "claude-3-sonnet": (3.00, 15.00),
-    "claude-sonnet-4": (3.00, 15.00),
-    "claude-opus-4": (15.00, 75.00),
-    "claude-haiku-4": (0.80, 4.00),
+    "claude-3-5-sonnet".lower(): (3.00, 15.00),
+    "claude-3-5-haiku".lower(): (0.80, 4.00),
+    "claude-3-opus".lower(): (15.00, 75.00),
+    "claude-3-haiku".lower(): (0.25, 1.25),
+    "claude-3-sonnet".lower(): (3.00, 15.00),
+    "claude-sonnet-4".lower(): (3.00, 15.00),
+    "claude-opus-4".lower(): (15.00, 75.00),
+    "claude-haiku-4".lower(): (0.80, 4.00),
     # Gemini
-    "gemini-2.0-flash": (0.10, 0.40),
-    "gemini-1.5-pro": (1.25, 5.00),
-    "gemini-1.5-flash": (0.075, 0.30),
-    "gemini-1.0-pro": (0.50, 1.50),
+    "gemini-2.0-flash".lower(): (0.10, 0.40),
+    "gemini-1.5-pro".lower(): (1.25, 5.00),
+    "gemini-1.5-flash".lower(): (0.075, 0.30),
+    "gemini-1.0-pro".lower(): (0.50, 1.50),
 }
 
 # Prefix fallback ordering (longest prefix wins)

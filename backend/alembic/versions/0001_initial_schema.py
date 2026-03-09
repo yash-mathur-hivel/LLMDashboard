@@ -18,6 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.execute("CREATE SCHEMA IF NOT EXISTS llm_monitoring")
+    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
 
     op.create_table(
         "mcp_servers",

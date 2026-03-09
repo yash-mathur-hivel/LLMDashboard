@@ -15,9 +15,6 @@ class AnthropicProvider(BaseProvider):
     def build_request_payload(self, req: NormalizedRequest) -> dict:
         # Convert normalized (likely OpenAI-style) messages into Anthropic's expected format
         anthropic_messages = []
-    def build_request_payload(self, req: NormalizedRequest) -> dict:
-        # Convert normalized (likely OpenAI-style) messages into Anthropic's expected format
-        anthropic_messages = []
         system_messages = []
 
         for msg in req.messages:
@@ -35,9 +32,13 @@ class AnthropicProvider(BaseProvider):
             # Map OpenAI-style roles to Anthropic roles / fields
             if role == "system":
                 # Collect system messages to merge into the system field later
-                system_messages.append("".join(
-                    block.get("text", "") for block in content_blocks if block.get("type") == "text"
-                ))
+                system_messages.append(
+                    "".join(
+                        block.get("text", "")
+                        for block in content_blocks
+                        if block.get("type") == "text"
+                    )
+                )
                 continue
             elif role == "assistant":
                 anthropic_role = "assistant"
@@ -57,6 +58,7 @@ class AnthropicProvider(BaseProvider):
             "messages": anthropic_messages,
             "max_tokens": req.max_tokens or 4096,
         }
+
         # Prefer explicit system field, but also merge any system-role messages
         system_text_parts = []
         if req.system:
@@ -65,8 +67,10 @@ class AnthropicProvider(BaseProvider):
             system_text_parts.append("\n".join(system_messages))
         if system_text_parts:
             payload["system"] = "\n".join(system_text_parts)
+
         if req.temperature is not None:
             payload["temperature"] = req.temperature
+
         if req.tools:
             # Convert normalized/OpenAI-style tools into Anthropic's tools format
             anthropic_tools = []
@@ -76,32 +80,9 @@ class AnthropicProvider(BaseProvider):
                     {
                         "name": tool.get("name"),
                         "description": tool.get("description"),
-                        "input_schema": tool.get("parameters") or tool.get("input_schema") or {},
-                    }
-                )
-            payload["tools"] = anthropic_tools
-
-        return payload
-
-        payload: dict = {
-            "model": req.model,
-            "messages": anthropic_messages,
-            "max_tokens": req.max_tokens or 4096,
-        }
-        if req.system:
-            payload["system"] = req.system
-        if req.temperature is not None:
-            payload["temperature"] = req.temperature
-        if req.tools:
-            # Convert normalized/OpenAI-style tools into Anthropic's tools format
-            anthropic_tools = []
-            for tool in req.tools:
-                # Expecting shape similar to {"name": ..., "description": ..., "parameters": {...}}
-                anthropic_tools.append(
-                    {
-                        "name": tool.get("name"),
-                        "description": tool.get("description"),
-                        "input_schema": tool.get("parameters") or tool.get("input_schema") or {},
+                        "input_schema": tool.get("parameters")
+                        or tool.get("input_schema")
+                        or {},
                     }
                 )
             payload["tools"] = anthropic_tools

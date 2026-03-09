@@ -1,5 +1,6 @@
-from app.services.providers.base import BaseProvider, NormalizedRequest, NormalizedResponse, ToolCall
+import json
 
+from app.services.providers.base import BaseProvider, NormalizedRequest, NormalizedResponse, ToolCall
 
 class GeminiProvider(BaseProvider):
     def get_api_url(self, model: str) -> str:

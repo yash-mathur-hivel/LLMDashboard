@@ -106,11 +106,13 @@ async def execute_proxy(
             else:
                 norm_resp = provider.parse_response(response_data)
     except httpx.HTTPError as exc:
-        status = "error"
-        error_message = str(exc)
-    except Exception:
-        # Re-raise unexpected exceptions so they are visible to callers/monitoring
-        raise
+         status = "error"
+         error_message = str(exc)
+         # Use a sentinel status code to indicate a transport-level error
+         http_status_code = http_status_code or 0
+     except Exception:
+         # Re-raise unexpected exceptions so they are visible to callers/monitoring
+         raise
 
     latency_ms = int((time.monotonic() - start_time) * 1000)
 
@@ -141,7 +143,7 @@ async def execute_proxy(
         tool_definitions=tools,
         assistant_response=norm_resp.content if norm_resp else None,
         tool_calls=tool_calls_data,
-        finish_reason=norm_resp.finish_reason if norm_resp and norm_resp.finish_reason else "error",
+        finish_reason=norm_resp.finish_reason if norm_resp else "error",
         status=status,
         error_message=error_message,
         http_status_code=http_status_code,

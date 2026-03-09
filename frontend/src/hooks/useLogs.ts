@@ -14,7 +14,12 @@ export function useLogs(filters: LogFilters = {}) {
 export function useLogDetail(id: string | null) {
   return useQuery({
     queryKey: ["log", id],
-    queryFn: () => fetchLog(id!),
+    queryFn: () => {
+      if (!id) {
+        throw new Error("Log ID is required to fetch log detail");
+      }
+      return fetchLog(id);
+    },
     enabled: !!id,
     staleTime: 30_000,
   });

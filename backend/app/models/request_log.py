@@ -37,7 +37,7 @@ class RequestLog(Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     prompt_tokens: Mapped[int | None] = mapped_column(Integer)
     completion_tokens: Mapped[int | None] = mapped_column(Integer)
-    cost_usd: Mapped["Decimal | None"] = mapped_column(NUMERIC(12, 8))
+    cost_usd: Mapped[Decimal | None] = mapped_column(NUMERIC(12, 8))
     system_prompt: Mapped[str | None] = mapped_column(Text)
     messages: Mapped[dict] = mapped_column(JSONB, nullable=False)
     tool_definitions: Mapped[dict | None] = mapped_column(JSONB)
