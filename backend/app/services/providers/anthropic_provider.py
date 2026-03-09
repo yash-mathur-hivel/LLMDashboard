@@ -89,9 +89,7 @@ class AnthropicProvider(BaseProvider):
 
         return payload
 
-        return payload
-
-    def parse_response(self, data: dict) -> NormalizedResponse:
+        def parse_response(self, data: dict) -> NormalizedResponse:
         usage = data.get("usage", {})
         # Anthropic Messages API returns a list of message objects under "content"
         raw_content = data.get("content", [])
