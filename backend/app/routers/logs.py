@@ -50,7 +50,7 @@ async def list_logs(
                 RequestLog.model.ilike(f"%{search}%"),
                 RequestLog.label.ilike(f"%{search}%"),
                 RequestLog.origin_domain.ilike(f"%{search}%"),
-                RequestLog.assistant_response.ilike(f"%{search}%"),
+                cast(RequestLog.assistant_response, String).ilike(f"%{search}%"),
             )
         )
 
@@ -67,7 +67,7 @@ async def list_logs(
         total=total,
         page=page,
         page_size=page_size,
-        total_pages=max(1, -(-total // page_size)),
+        total_pages=0 if total == 0 else -(-total // page_size),
     )
 
 

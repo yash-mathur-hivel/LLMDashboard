@@ -90,9 +90,8 @@ class GeminiProvider(BaseProvider):
                 # Gemini often returns arguments as a JSON string; try to parse it
                 if isinstance(raw_args, str):
                     try:
-                        import json
                         parsed_args = json.loads(raw_args)
-                    except Exception:
+                    except json.JSONDecodeError:
                         parsed_args = {"_raw": raw_args}
                 else:
                     parsed_args = raw_args
@@ -110,7 +109,8 @@ class GeminiProvider(BaseProvider):
             "SAFETY": "error",
             "RECITATION": "error",
         }
-        finish_reason = "tool_use" if tool_calls else finish_map.get(finish_reason_raw, "stop")
+        # Preserve provider finish reason, defaulting to "stop" if unknown
+        finish_reason = finish_map.get(finish_reason_raw, "stop")
 
         return NormalizedResponse(
             content="\n".join(text_parts) or None,
@@ -124,4 +124,4 @@ class GeminiProvider(BaseProvider):
                 "candidates": data.get("candidates"),
                 "safety_ratings": data.get("promptFeedback", {}).get("safetyRatings"),
             },
-            )
+        )

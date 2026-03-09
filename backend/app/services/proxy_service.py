@@ -72,7 +72,11 @@ async def execute_proxy(
 
     payload = provider.build_request_payload(norm_req)
     headers = provider.get_headers(api_key)
-    url = provider.get_api_url(model)
+    # Ensure custom API endpoints are respected for compatible/azure providers
+    if api_endpoint is not None:
+        url = api_endpoint
+    else:
+        url = provider.get_api_url(model)
 
     masked_key = mask_api_key(api_key)
     origin_domain = extract_domain(referer, origin)
@@ -101,15 +105,18 @@ async def execute_proxy(
                 error_message = str(response_data)
             else:
                 norm_resp = provider.parse_response(response_data)
-    except Exception as exc:
+    except httpx.HTTPError as exc:
         status = "error"
         error_message = str(exc)
+    except Exception:
+        # Re-raise unexpected exceptions so they are visible to callers/monitoring
+        raise
 
     latency_ms = int((time.monotonic() - start_time) * 1000)
 
     prompt_tokens = norm_resp.prompt_tokens if norm_resp is not None else None
     completion_tokens = norm_resp.completion_tokens if norm_resp is not None else None
-    cost_usd = calculate_cost(model, prompt_tokens or 0, completion_tokens or 0)
+    cost_usd = calculate_cost(model, prompt_tokens or 0, completion_tokens or 0) if norm_resp is not None else 0.0
 
     tool_calls_data = None
     if norm_resp and norm_resp.tool_calls:
@@ -134,16 +141,20 @@ async def execute_proxy(
         tool_definitions=tools,
         assistant_response=norm_resp.content if norm_resp else None,
         tool_calls=tool_calls_data,
-        finish_reason=norm_resp.finish_reason if norm_resp else "error",
+        finish_reason=norm_resp.finish_reason if norm_resp and norm_resp.finish_reason else "error",
         status=status,
         error_message=error_message,
         http_status_code=http_status_code,
         mcp_config_id=mcp_config_id,
-        raw_response_meta=norm_resp.raw_meta if norm_resp else {},
-    )
+        raw_response_meta=norm_resp.raw_meta if norm_resp else response_data,
+        )
 
     db.add(log)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
 
     return {
         "log_id": str(log_id),
@@ -158,4 +169,5 @@ async def execute_proxy(
         "latency_ms": latency_ms,
         "status": status,
         "error_message": error_message,
-    }
+        "http_status_code": http_status_code,
+        }

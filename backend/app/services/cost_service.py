@@ -73,6 +73,16 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
     pricing = get_pricing(model)
     if pricing is None:
         return 0.0
+    # Coerce to non-negative integers to avoid type errors and negative costs
+    try:
+        prompt = max(int(prompt_tokens), 0)
+    except (TypeError, ValueError):
+        prompt = 0
+    try:
+        completion = max(int(completion_tokens), 0)
+    except (TypeError, ValueError):
+        completion = 0
+
     input_rate, output_rate = pricing
-    cost = (prompt_tokens / 1_000_000) * input_rate + (completion_tokens / 1_000_000) * output_rate
+    cost = (prompt / 1_000_000) * input_rate + (completion / 1_000_000) * output_rate
     return round(cost, 8)

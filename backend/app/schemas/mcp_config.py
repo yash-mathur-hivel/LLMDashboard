@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Any
 from pydantic import BaseModel
 
 
@@ -19,8 +18,15 @@ class MCPServerCreate(MCPServerBase):
     pass
 
 
-class MCPServerUpdate(MCPServerBase):
-    pass
+class MCPServerUpdate(BaseModel):
+    name: str | None = None
+    transport: str | None = None
+    command: str | None = None
+    args: list[str] | None = None
+    url: str | None = None
+    headers: dict[str, str] | None = None
+    env_vars: dict[str, str] | None = None
+    enabled: bool | None = None
 
 
 class MCPServerResponse(MCPServerBase):

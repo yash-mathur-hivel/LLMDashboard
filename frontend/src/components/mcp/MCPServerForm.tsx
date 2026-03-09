@@ -82,6 +82,9 @@ export function MCPServerForm({ initial, onSubmit, onClose, isLoading }: MCPServ
                   args: next === "stdio" ? prev.args : null,
                   url: next === "http" || next === "sse" ? prev.url : null,
                 }));
+                if (next !== "stdio") {
+                  setArgsStr("");
+                }
               }}
               className="input w-full"
             >
@@ -124,10 +127,17 @@ export function MCPServerForm({ initial, onSubmit, onClose, isLoading }: MCPServ
           )}
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-[#94a3b8]">Enabled</label>
+            <label
+              htmlFor="mcp-enabled"
+              className="text-sm text-[#94a3b8]"
+            >
+              Enabled
+            </label>
             <button
+              id="mcp-enabled"
               type="button"
               onClick={() => set("enabled", !form.enabled)}
+              aria-pressed={form.enabled}
               className={`relative inline-flex h-5 w-9 rounded-full transition-colors ${form.enabled ? "bg-[#2563eb]" : "bg-[#1e293b]"}`}
             >
               <span

@@ -39,7 +39,18 @@ async def get_summary(
         FROM llm_monitoring.request_logs
         WHERE {where}
     """)
-    totals_row = (await db.execute(totals_sql, params)).mappings().one()
+    totals_row = (await db.execute(totals_sql, params)).mappings().one_or_none()
+    if totals_row is None:
+        totals_row = {
+            "total_requests": 0,
+            "total_prompt_tokens": 0,
+            "total_completion_tokens": 0,
+            "total_cost_usd": 0.0,
+            "avg_latency_ms": 0.0,
+            "p50_latency_ms": 0.0,
+            "p95_latency_ms": 0.0,
+            "error_count": 0,
+        }
 
     breakdown = []
     if group_by and group_by in VALID_GROUP_BY:
@@ -129,7 +140,8 @@ async def get_timeseries(
             return None
         if hasattr(v, "isoformat"):
             return v.isoformat()
-        if isinstance(v, (int, float)):
+        from decimal import Decimal
+        if isinstance(v, (int, float, Decimal)):
             return float(v)
         return v  # strings (dimension) pass through as-is
 
@@ -156,9 +168,10 @@ async def get_dimensions(db: AsyncSession) -> dict:
             if x is None:
                 continue
             if isinstance(x, str):
-                if x.strip() == "":
+                value = x.strip()
+                if value == "":
                     continue
-                cleaned.append(x.strip())
+                cleaned.append(value.lower())
             else:
                 cleaned.append(x)
         return cleaned

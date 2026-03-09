@@ -32,7 +32,7 @@ async def update_server(
     server = await db.get(MCPServer, server_id)
     if not server:
         raise HTTPException(status_code=404, detail="MCP server not found")
-    for k, v in body.model_dump().items():
+    for k, v in body.model_dump(exclude_unset=True).items():
         setattr(server, k, v)
     await db.commit()
     await db.refresh(server)

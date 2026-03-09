@@ -24,8 +24,11 @@ class AnthropicProvider(BaseProvider):
             elif isinstance(content, list):
                 # Assume already in Anthropic-like block format if it's a list
                 content_blocks = content
-            else:
+            elif content is None:
                 content_blocks = []
+            else:
+                # Fallback: coerce unexpected content types to text to avoid silent data loss
+                content_blocks = [{"type": "text", "text": str(content)}]
 
             anthropic_messages.append(
                 {
@@ -61,13 +64,22 @@ class AnthropicProvider(BaseProvider):
 
     def parse_response(self, data: dict) -> NormalizedResponse:
         usage = data.get("usage", {})
-        content_blocks = data.get("content", [])
+        # Anthropic Messages API returns a list of message objects under "content"
+        raw_content = data.get("content", [])
+        if raw_content and isinstance(raw_content[0], dict) and "content" in raw_content[0]:
+            # Use the first message's content blocks
+            content_blocks = raw_content[0].get("content", []) or []
+        else:
+            # Fallback to treating "content" as the blocks list directly
+            content_blocks = raw_content or []
         stop_reason = data.get("stop_reason", "end_turn")
 
         text_parts = []
         tool_calls = []
 
         for block in content_blocks:
+            if not isinstance(block, dict):
+                continue
             if block.get("type") == "text":
                 text_parts.append(block.get("text", ""))
             elif block.get("type") == "tool_use":
@@ -94,5 +106,10 @@ class AnthropicProvider(BaseProvider):
             prompt_tokens=usage.get("input_tokens", 0),
             completion_tokens=usage.get("output_tokens", 0),
             finish_reason=finish_reason,
-            raw_meta={"id": data.get("id"), "model": data.get("model")},
+            raw_meta={
+                "id": data.get("id"),
+                "model": data.get("model"),
+                "stop_reason": stop_reason,
+                "usage": usage,
+            },
         )
