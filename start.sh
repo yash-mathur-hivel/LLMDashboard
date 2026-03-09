@@ -55,8 +55,8 @@ echo "  Frontend PID: $FRONTEND_PID"
 cleanup() {
   echo ''
   echo '→ Shutting down...'
-  kill -- -"$BACKEND_PID" 2>/dev/null || true
-  kill -- -"$FRONTEND_PID" 2>/dev/null || true
+  kill -- "$BACKEND_PID" 2>/dev/null || true
+  kill -- "$FRONTEND_PID" 2>/dev/null || true
   wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
 }
 trap cleanup SIGINT SIGTERM EXIT

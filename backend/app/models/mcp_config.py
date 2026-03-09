@@ -11,13 +11,13 @@ class MCPServer(Base):
     __tablename__ = "mcp_servers"
     __table_args__ = {"schema": "llm_monitoring"}
 
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid()
     )
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     transport: Mapped[str] = mapped_column(String(20), nullable=False)
     command: Mapped[str | None] = mapped_column(Text)
-    args: Mapped[list | None] = mapped_column(JSONB)
+    args: Mapped[list[str] | None] = mapped_column(JSONB)
     url: Mapped[str | None] = mapped_column(Text)
     headers: Mapped[dict | None] = mapped_column(JSONB)
     env_vars: Mapped[dict | None] = mapped_column(JSONB)

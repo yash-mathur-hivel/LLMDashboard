@@ -13,7 +13,7 @@ class ProxyRequest(BaseModel):
     label: str | None = None
     mcp_config_id: uuid.UUID | None = None
     system: str | None = None
-    user_message: str                          # current user turn (required)
+    user_message: str | None = None                          # current user turn (optional)
     messages: list[dict[str, Any]] = Field(default_factory=list)  # prior conversation history (optional)
     tools: list[dict[str, Any]] | None = None
     max_tokens: int | None = None
@@ -26,7 +26,7 @@ class ProxyResponse(BaseModel):
     model: str
     content: str | None
     tool_calls: list[dict[str, Any]] | None
-    finish_reason: Literal["stop", "length", "tool_calls", "error"]
+    finish_reason: str
     prompt_tokens: int
     completion_tokens: int
     cost_usd: float
