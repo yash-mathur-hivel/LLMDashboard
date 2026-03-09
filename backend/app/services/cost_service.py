@@ -58,6 +58,8 @@ PREFIX_FALLBACKS = sorted(
 
 
 def get_pricing(model: str) -> tuple[float, float] | None:
+    if not isinstance(model, str) or not model:
+        return None
     model_lower = model.lower()
     if model_lower in PRICING:
         return PRICING[model_lower]

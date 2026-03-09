@@ -20,7 +20,22 @@ class GeminiProvider(BaseProvider):
             if isinstance(content, str):
                 parts = [{"text": content}]
             elif isinstance(content, list):
-                parts = content
+                normalized_parts = []
+                for item in content:
+                    # Simple normalization: support strings and { "type": "text", "text": ... }
+                    if isinstance(item, str):
+                        normalized_parts.append({"text": item})
+                    elif isinstance(item, dict):
+                        if "text" in item:
+                            normalized_parts.append({"text": item["text"]})
+                        elif item.get("type") == "text" and "text" in item:
+                            normalized_parts.append({"text": item["text"]})
+                        else:
+                            # Fallback to string representation for unsupported shapes
+                            normalized_parts.append({"text": str(item)})
+                    else:
+                        normalized_parts.append({"text": str(item)})
+                parts = normalized_parts
             else:
                 parts = [{"text": str(content)}]
             contents.append({"role": role, "parts": parts})
@@ -71,11 +86,21 @@ class GeminiProvider(BaseProvider):
                 text_parts.append(part["text"])
             elif "functionCall" in part:
                 fc = part["functionCall"]
+                raw_args = fc.get("arguments", fc.get("args", {}))
+                # Gemini often returns arguments as a JSON string; try to parse it
+                if isinstance(raw_args, str):
+                    try:
+                        import json
+                        parsed_args = json.loads(raw_args)
+                    except Exception:
+                        parsed_args = {"_raw": raw_args}
+                else:
+                    parsed_args = raw_args
                 tool_calls.append(
                     ToolCall(
                         id=fc.get("name", ""),  # Gemini doesn't provide a separate ID
                         name=fc.get("name", ""),
-                        input=fc.get("args", {}),
+                        input=parsed_args,
                     )
                 )
 
@@ -93,5 +118,10 @@ class GeminiProvider(BaseProvider):
             prompt_tokens=usage.get("promptTokenCount", 0),
             completion_tokens=usage.get("candidatesTokenCount", 0),
             finish_reason=finish_reason,
-            raw_meta={"model": data.get("modelVersion")},
-        )
+            raw_meta={
+                "model": data.get("modelVersion"),
+                "finish_reason_raw": finish_reason_raw,
+                "candidates": data.get("candidates"),
+                "safety_ratings": data.get("promptFeedback", {}).get("safetyRatings"),
+            },
+            )

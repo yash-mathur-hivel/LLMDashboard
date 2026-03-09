@@ -33,12 +33,12 @@ export function MCPServerForm({ initial, onSubmit, onClose, isLoading }: MCPServ
           env_vars: initial.env_vars,
           enabled: initial.enabled,
         }
-      : EMPTY
+      : { ...EMPTY }
   );
   const [argsStr, setArgsStr] = useState(initial?.args?.join(" ") ?? "");
 
-  const set = <K extends keyof MCPServerCreate>(k: K, v: MCPServerCreate[K]) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof MCPServerCreate>(key: K, value: MCPServerCreate[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +73,16 @@ export function MCPServerForm({ initial, onSubmit, onClose, isLoading }: MCPServ
           <Field label="Transport">
             <select
               value={form.transport}
-              onChange={(e) => set("transport", e.target.value as MCPServerCreate["transport"])}
+              onChange={(e) => {
+                const next = e.target.value as MCPServerCreate["transport"];
+                setForm((prev) => ({
+                  ...prev,
+                  transport: next,
+                  command: next === "stdio" ? prev.command : null,
+                  args: next === "stdio" ? prev.args : null,
+                  url: next === "http" || next === "sse" ? prev.url : null,
+                }));
+              }}
               className="input w-full"
             >
               <option value="stdio">stdio</option>

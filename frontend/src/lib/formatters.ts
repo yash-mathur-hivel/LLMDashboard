@@ -1,11 +1,17 @@
 import { format, formatDistanceToNow } from "date-fns";
 
 export function formatDate(dateStr: string): string {
-  return format(new Date(dateStr), "MMM d, yyyy HH:mm:ss");
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "—";
+  return format(date, "MMM d, yyyy HH:mm:ss");
 }
 
 export function formatRelative(dateStr: string): string {
-  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "—";
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 export function formatCost(cost: number | null): string {
@@ -28,7 +34,8 @@ export function formatLatency(ms: number | null): string {
   return `${ms}ms`;
 }
 
-export function formatNumber(n: number): string {
+export function formatNumber(n: number | null): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return n.toLocaleString();

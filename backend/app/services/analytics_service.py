@@ -151,7 +151,17 @@ async def get_dimensions(db: AsyncSession) -> dict:
     def clean(arr):
         if arr is None:
             return []
-        return [x for x in arr if x is not None]
+        cleaned = []
+        for x in arr:
+            if x is None:
+                continue
+            if isinstance(x, str):
+                if x.strip() == "":
+                    continue
+                cleaned.append(x.strip())
+            else:
+                cleaned.append(x)
+        return cleaned
 
     return {
         "providers": clean(row["providers"]),

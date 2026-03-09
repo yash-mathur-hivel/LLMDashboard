@@ -13,9 +13,30 @@ class AnthropicProvider(BaseProvider):
         }
 
     def build_request_payload(self, req: NormalizedRequest) -> dict:
+        # Convert normalized (likely OpenAI-style) messages into Anthropic's expected format
+        anthropic_messages = []
+        for msg in req.messages:
+            role = msg.get("role")
+            content = msg.get("content")
+            # Normalize content into Anthropic content blocks
+            if isinstance(content, str):
+                content_blocks = [{"type": "text", "text": content}]
+            elif isinstance(content, list):
+                # Assume already in Anthropic-like block format if it's a list
+                content_blocks = content
+            else:
+                content_blocks = []
+
+            anthropic_messages.append(
+                {
+                    "role": role,
+                    "content": content_blocks,
+                }
+            )
+
         payload: dict = {
             "model": req.model,
-            "messages": req.messages,
+            "messages": anthropic_messages,
             "max_tokens": req.max_tokens or 4096,
         }
         if req.system:
@@ -23,7 +44,18 @@ class AnthropicProvider(BaseProvider):
         if req.temperature is not None:
             payload["temperature"] = req.temperature
         if req.tools:
-            payload["tools"] = req.tools  # Already in Anthropic format
+            # Convert normalized/OpenAI-style tools into Anthropic's tools format
+            anthropic_tools = []
+            for tool in req.tools:
+                # Expecting shape similar to {"name": ..., "description": ..., "parameters": {...}}
+                anthropic_tools.append(
+                    {
+                        "name": tool.get("name"),
+                        "description": tool.get("description"),
+                        "input_schema": tool.get("parameters") or tool.get("input_schema") or {},
+                    }
+                )
+            payload["tools"] = anthropic_tools
 
         return payload
 
@@ -47,9 +79,14 @@ class AnthropicProvider(BaseProvider):
                     )
                 )
 
-        finish_reason = "tool_use" if tool_calls else (
-            "stop" if stop_reason in ("end_turn", "stop_sequence") else stop_reason
-        )
+        if tool_calls:
+            finish_reason = "tool_use"
+        elif stop_reason in ("end_turn", "stop_sequence"):
+            finish_reason = "stop"
+        elif stop_reason == "max_tokens":
+            finish_reason = "length"
+        else:
+            finish_reason = stop_reason or "stop"
 
         return NormalizedResponse(
             content="\n".join(text_parts) or None,

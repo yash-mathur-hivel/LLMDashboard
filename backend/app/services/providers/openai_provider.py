@@ -68,7 +68,7 @@ class OpenAIProvider(BaseProvider):
             tool_calls=tool_calls,
             prompt_tokens=usage.get("prompt_tokens", 0),
             completion_tokens=usage.get("completion_tokens", 0),
-            finish_reason="tool_use" if tool_calls else finish_reason,
+            finish_reason=finish_reason,
             raw_meta={"id": data.get("id"), "model": data.get("model")},
         )
 

@@ -20,9 +20,7 @@ def detect_provider(model: str, api_endpoint: str | None) -> str:
     if api_endpoint:
         return "openai_compatible"
     model_lower = model.lower()
-    if any(model_lower.startswith(p) for p in ("gpt-", "o1-", "o3-")):
-        return "openai"
-    if model_lower.startswith("o1") or model_lower.startswith("o3"):
+    if any(model_lower.startswith(p) for p in ("gpt-", "o1", "o3")):
         return "openai"
     if model_lower.startswith("claude-"):
         return "anthropic"
@@ -92,7 +90,11 @@ async def execute_proxy(
         async with httpx.AsyncClient(timeout=120.0) as client:
             resp = await client.post(url, json=payload, headers=headers)
             http_status_code = resp.status_code
-            response_data = resp.json()
+            try:
+                response_data = resp.json()
+            except ValueError:
+                # Fallback for non-JSON responses
+                response_data = {"raw_text": resp.text}
 
             if resp.status_code >= 400:
                 status = "error"
@@ -105,9 +107,9 @@ async def execute_proxy(
 
     latency_ms = int((time.monotonic() - start_time) * 1000)
 
-    prompt_tokens = norm_resp.prompt_tokens if norm_resp else 0
-    completion_tokens = norm_resp.completion_tokens if norm_resp else 0
-    cost_usd = calculate_cost(model, prompt_tokens, completion_tokens)
+    prompt_tokens = norm_resp.prompt_tokens if norm_resp is not None else None
+    completion_tokens = norm_resp.completion_tokens if norm_resp is not None else None
+    cost_usd = calculate_cost(model, prompt_tokens or 0, completion_tokens or 0)
 
     tool_calls_data = None
     if norm_resp and norm_resp.tool_calls:
@@ -152,7 +154,7 @@ async def execute_proxy(
         "finish_reason": norm_resp.finish_reason if norm_resp else "error",
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
-        "cost_usd": float(cost_usd),
+        "cost_usd": cost_usd,
         "latency_ms": latency_ms,
         "status": status,
         "error_message": error_message,
